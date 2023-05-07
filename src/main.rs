@@ -89,8 +89,8 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
             
-               // getvideo(&session, url, videoid).await;
-                getvideo(session, url, videoid).await;
+                getvideo(&session, url, videoid).await;
+               // getvideo(session, url, videoid).await;
            
         }
 
@@ -98,6 +98,8 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
 }
 
 async fn getvideo(session: &Session, url: String, videoid: String) {
+
+    println!("url: {}", url);
 
     let response = reqwest::get(url).await.unwrap();
 
@@ -113,7 +115,6 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
         if json["items"][0].is_null() {
             println!("json[\"items\"][0] is null for video {}", videoid);
-            println!("null found at url {}", url);
             return;
         }
 
