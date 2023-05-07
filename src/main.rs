@@ -79,7 +79,6 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
 
 
     if let Some(rows) = session.query("SELECT videoid FROM adorastats.trackedytvideosids", &[]).await.unwrap().rows {
-        let mut tasks = vec![];
         
         for row in rows {
             let videoid: String = row.columns[0].as_ref().unwrap().as_text().unwrap().to_string();
@@ -90,31 +89,15 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
             
-            let task = tokio::spawn(async move {
-                getvideo(url, videoid).await;
-            });
-            tasks.push(task);
-            }
+                getvideo(&session, url, videoid).await;
             
-        for task in tasks {
-            task.await.unwrap();
-        }
            
         }
 
     }
+}
 
-async fn getvideo(url: String, videoid: String) {
-
-    let scylla_username = "cassandra";
-    let scylla_password = "cassandra";
-
-    let session: Session = SessionBuilder::new()
-    .known_node("127.0.0.1:9042")
-    .user(scylla_username, scylla_password)
-    .build()
-    .await
-    .unwrap();
+async fn getvideo(session: &Session, url: String, videoid: String) {
 
     let response = reqwest::get(url).await.unwrap();
 
