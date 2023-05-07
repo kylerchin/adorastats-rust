@@ -117,10 +117,19 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
         if json["items"][0]["statistics"]["likeCount"].is_null() {
             println!("json[\"items\"][0][\"statistics\"][\"likeCount\"] is null for video {}", videoid);
-            return;
-        }
+            
+            let views:i64 = json["items"][0]["statistics"]["viewCount"].as_str().unwrap().parse::<i64>().unwrap();
 
-        //ensure comments is i64 and not null
+            println!("views: {}", views);
+
+            let nodeid = [0,0,0,0,0,0];
+            let yt_uuid = uuid::Uuid::now_v1(&nodeid);
+    
+            //insert into scylla
+            session.query("INSERT INTO adorastats.ytvideostats (videoid, time, views) VALUES (?,?,?)", (&videoid, &yt_uuid, &views)).await.unwrap();
+            session.query("UPDATE adorastats.statpoints SET amount = amount + 1 WHERE source = 'youtube';", &[]).await.unwrap();
+        } else {
+               //ensure comments is i64 and not null
 
         if json["items"][0]["statistics"]["commentCount"].is_null() {
             println!("json[\"items\"][0][\"statistics\"][\"commentCount\"] is null for video {}", videoid);
@@ -141,5 +150,8 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
         //insert into scylla
         session.query(insertquery, (&videoid, &yt_uuid, &views, &likes, &comments)).await.unwrap();
         session.query("UPDATE adorastats.statpoints SET amount = amount + 1 WHERE source = 'youtube';", &[]).await.unwrap();
+        }
+
+     
 }
 }
