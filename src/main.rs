@@ -113,7 +113,7 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
         if json["items"][0].is_null() {
             println!("json[\"items\"][0] is null for video {}", videoid);
-            println("null found at url {}", url);
+            println!("null found at url {}", url);
             return;
         }
 
