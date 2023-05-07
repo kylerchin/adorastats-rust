@@ -81,7 +81,8 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
             //pick random item from yt_api_keys
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
-            let response = reqwest::get(url).await.unwrap();
+            async {
+                let response = reqwest::get(url).await.unwrap();
 
             let insertquery = "INSERT INTO adorastats.ytvideostats (videoid, time, views, likes, comments) VALUES (?,?,?,?,?)";
 
@@ -132,6 +133,7 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
 
                 //insert into scylla
                 session.query(insertquery, (&videoid, &yt_uuid, &views, &likes, &comments)).await.unwrap();
+            }
             }
         }
     }
