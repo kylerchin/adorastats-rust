@@ -95,7 +95,6 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
                 println!("comments: {}", comments);
 
                 let nodeid = [0,0,0,0,0,0];
-
                 let yt_uuid = uuid::Uuid::now_v1(&nodeid);
 
                 //insert into scylla
