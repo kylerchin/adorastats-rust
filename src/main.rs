@@ -119,9 +119,9 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
                     continue;
                 }
 
-                let views:i64 = json["items"][0]["statistics"]["viewCount"].as_i64().unwrap();
-                let likes:i64 = json["items"][0]["statistics"]["likeCount"].as_i64().unwrap();
-                let comments:i64 = json["items"][0]["statistics"]["commentCount"].as_i64().unwrap();
+                let views:i64 = json["items"][0]["statistics"]["viewCount"].as_str().unwrap().parse::<i64>().unwrap();
+                let likes:i64 = json["items"][0]["statistics"]["likeCount"].as_str().unwrap().parse::<i64>().unwrap();
+                let comments:i64 = json["items"][0]["statistics"]["commentCount"].as_str().unwrap().parse::<i64>().unwrap();
 
                 println!("views: {}", views);
                 println!("likes: {}", likes);
