@@ -43,6 +43,12 @@ async fn main() {
         return;
     }
 
+    let number_of_calls_per_day = 10_000 * yt_api_keys.len();
+    let number_of_videos = number_of_calls_per_day / 120;
+
+    println!("number_of_calls_per_day: {}", number_of_calls_per_day);
+    println!("number_of_videos: {}", number_of_videos);
+
     let scylla_username = scylla_keys[0].clone();
     let scylla_password = scylla_keys[1].clone();
 
