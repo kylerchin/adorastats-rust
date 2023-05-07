@@ -34,6 +34,10 @@ async fn main() {
         return;
     }
 
+    //print yt_api_keys length
+
+    println!("yt_api_keys length: {}", yt_api_keys.len());
+
     if yt_api_keys.len() > 0 {
         println!("You have to have more than 0 api keys in ytkeys.txt");
         return;
