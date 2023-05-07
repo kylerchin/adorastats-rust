@@ -101,8 +101,12 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
     println!("url: {}", url);
 
-    let response = reqwest::get(url).await.unwrap();
+   // let response = reqwest::get(url).await.unwrap();
 
+    match reqwest::get(url).await {
+        Ok(response) => {
+           // println!("response: {}", resp.status());
+           
     let insertquery = "INSERT INTO adorastats.ytvideostats (videoid, time, views, likes, comments) VALUES (?,?,?,?,?)";
 
     let body = response.text().await.unwrap();
@@ -166,4 +170,10 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
      
 }
+        },
+        Err(e) => {
+            println!("error: {}", e);
+        }
+    }
+
 }
