@@ -82,7 +82,28 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
                 //if json["items"][0] does not exist, skip
 
                 if json["items"][0].is_null() {
-                    println!("json[\"items\"][0] is null");
+                    println!("json[\"items\"][0] is null for video {}", videoid);
+                    continue;
+                }
+
+                //ensure views is i64 and not null
+
+                if json["items"][0]["statistics"]["viewCount"].is_null() {
+                    println!("json[\"items\"][0][\"statistics\"][\"viewCount\"] is null for video {}", videoid);
+                    continue;
+                }
+
+                //ensure likes is i64 and not null
+
+                if json["items"][0]["statistics"]["likeCount"].is_null() {
+                    println!("json[\"items\"][0][\"statistics\"][\"likeCount\"] is null for video {}", videoid);
+                    continue;
+                }
+
+                //ensure comments is i64 and not null
+
+                if json["items"][0]["statistics"]["commentCount"].is_null() {
+                    println!("json[\"items\"][0][\"statistics\"][\"commentCount\"] is null for video {}", videoid);
                     continue;
                 }
 
