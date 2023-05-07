@@ -19,11 +19,11 @@ use reqwest::Error;
 
 #[tokio::main]
 async fn main() {
-    let yt_file = File::open("ytkeys.txt").unwrap();
+    let yt_file = File::open("./ytkeys.txt").unwrap();
     let yt_reader = BufReader::new(yt_file);
     let yt_api_keys: Vec<String> = yt_reader.lines().map(|line| line.unwrap()).collect();
 
-    let scylla_file = File::open("scyllakeys.txt").unwrap();
+    let scylla_file = File::open("./scyllakeys.txt").unwrap();
     let scylla_reader = BufReader::new(scylla_file);
     let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).collect();
 
@@ -35,7 +35,7 @@ async fn main() {
     }
 
     if yt_api_keys.len() > 0 {
-        println!("You have to have more than 1 api key in ytkeys.txt");
+        println!("You have to have more than 0 api keys in ytkeys.txt");
         return;
     }
 
