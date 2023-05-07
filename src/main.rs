@@ -140,6 +140,6 @@ async fn getvideo(session: &Session, url: String, videoid: String) {
 
         //insert into scylla
         session.query(insertquery, (&videoid, &yt_uuid, &views, &likes, &comments)).await.unwrap();
-        session.query("UPDATE adorastats.statspoints SET amount = amount + 1 WHERE source = 'youtube';", &[]).await.unwrap();
+        session.query("UPDATE adorastats.statpoints SET amount = amount + 1 WHERE source = 'youtube';", &[]).await.unwrap();
 }
 }
