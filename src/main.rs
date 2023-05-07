@@ -23,9 +23,9 @@ async fn main() {
     let yt_reader = BufReader::new(yt_file);
     let yt_api_keys: Vec<String> = yt_reader.lines().map(|line| line.unwrap()).collect();
 
-    let scylla_file = File::open("./scyllakeys.txt").unwrap();
-    let scylla_reader = BufReader::new(scylla_file);
-    let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).collect();
+    let scylla_file :  std::fs::File = File::open("./scyllakeys.txt").unwrap();
+let scylla_reader : std::io::BufReader<std::fs::File> = BufReader::new(scylla_file);
+let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).collect();
 
     //ensure scylla_keys length is 2
 
@@ -68,11 +68,19 @@ async fn main() {
 
 async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
     println!("fetching...");
-
+    
+    let scylla_file :  std::fs::File = File::open("./scyllakeys.txt").unwrap();
+let scylla_reader : std::io::BufReader<std::fs::File> = BufReader::new(scylla_file);
+let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).collect();
+    
+    let scylla_username = scylla_keys[0].clone();
+    let scylla_password = scylla_keys[1].clone();
     //select all rows from the table "adorastats.trackedytvideosids" (videoid text PRIMARY KEY, added timeuuid, videoname text)
 
 
     if let Some(rows) = session.query("SELECT videoid FROM adorastats.trackedytvideosids", &[]).await.unwrap().rows {
+        let mut tasks = vec![];
+        
         for row in rows {
             let videoid: String = row.columns[0].as_ref().unwrap().as_text().unwrap().to_string();
 
@@ -81,14 +89,33 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
             //pick random item from yt_api_keys
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
-                    getvideo(&session, url, videoid).await;
+            
+            let task = tokio::spawn(async move {
+                getvideo(url, videoid).await;
+            });
+            tasks.push(task);
             }
-
+            
+        for task in tasks {
+            task.await.unwrap();
+        }
            
         }
+
     }
 
-async fn getvideo(session: &Session, url: String, videoid: String) {
+async fn getvideo(url: String, videoid: String) {
+
+    let scylla_username = "cassandra";
+    let scylla_password = "cassandra";
+
+    let session: Session = SessionBuilder::new()
+    .known_node("127.0.0.1:9042")
+    .user(scylla_username, scylla_password)
+    .build()
+    .await
+    .unwrap();
+
     let response = reqwest::get(url).await.unwrap();
 
     let insertquery = "INSERT INTO adorastats.ytvideostats (videoid, time, views, likes, comments) VALUES (?,?,?,?,?)";
