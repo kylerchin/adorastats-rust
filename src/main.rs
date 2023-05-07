@@ -87,6 +87,8 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
 
             let body = response.text().await.unwrap();
 
+            println!("body: {}", body);
+
             if let Ok(json) = serde_json::from_str::<Value>(&body) {
 
                 //if json["items"][0] does not exist, skip
