@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 use tokio::time;
-
+use std::thread;
 use rand::Rng;
 use rand::seq::SliceRandom;
 use scylla::IntoTypedRows;
@@ -81,61 +81,65 @@ async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
             //pick random item from yt_api_keys
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
-            async {
-                let response = reqwest::get(url).await.unwrap();
-
-            let insertquery = "INSERT INTO adorastats.ytvideostats (videoid, time, views, likes, comments) VALUES (?,?,?,?,?)";
-
-            let body = response.text().await.unwrap();
-
-            println!("body: {}", body);
-
-            if let Ok(json) = serde_json::from_str::<Value>(&body) {
-
-                //if json["items"][0] does not exist, skip
-
-                if json["items"][0].is_null() {
-                    println!("json[\"items\"][0] is null for video {}", videoid);
-                    continue;
-                }
-
-                //ensure views is i64 and not null
-
-                if json["items"][0]["statistics"]["viewCount"].is_null() {
-                    println!("json[\"items\"][0][\"statistics\"][\"viewCount\"] is null for video {}", videoid);
-                    continue;
-                }
-
-                //ensure likes is i64 and not null
-
-                if json["items"][0]["statistics"]["likeCount"].is_null() {
-                    println!("json[\"items\"][0][\"statistics\"][\"likeCount\"] is null for video {}", videoid);
-                    continue;
-                }
-
-                //ensure comments is i64 and not null
-
-                if json["items"][0]["statistics"]["commentCount"].is_null() {
-                    println!("json[\"items\"][0][\"statistics\"][\"commentCount\"] is null for video {}", videoid);
-                    continue;
-                }
-
-                let views:i64 = json["items"][0]["statistics"]["viewCount"].as_str().unwrap().parse::<i64>().unwrap();
-                let likes:i64 = json["items"][0]["statistics"]["likeCount"].as_str().unwrap().parse::<i64>().unwrap();
-                let comments:i64 = json["items"][0]["statistics"]["commentCount"].as_str().unwrap().parse::<i64>().unwrap();
-
-                println!("views: {}", views);
-                println!("likes: {}", likes);
-                println!("comments: {}", comments);
-
-                let nodeid = [0,0,0,0,0,0];
-                let yt_uuid = uuid::Uuid::now_v1(&nodeid);
-
-                //insert into scylla
-                session.query(insertquery, (&videoid, &yt_uuid, &views, &likes, &comments)).await.unwrap();
+                    getvideo(&session, url, videoid);
             }
-            }
+
+           
         }
     }
 
+async fn getvideo(session: &Session, url: String, videoid: String) {
+    let response = reqwest::get(url).await.unwrap();
+
+    let insertquery = "INSERT INTO adorastats.ytvideostats (videoid, time, views, likes, comments) VALUES (?,?,?,?,?)";
+
+    let body = response.text().await.unwrap();
+
+    println!("body: {}", body);
+
+    if let Ok(json) = serde_json::from_str::<Value>(&body) {
+
+        //if json["items"][0] does not exist, skip
+
+        if json["items"][0].is_null() {
+            println!("json[\"items\"][0] is null for video {}", videoid);
+            return;
+        }
+
+        //ensure views is i64 and not null
+
+        if json["items"][0]["statistics"]["viewCount"].is_null() {
+            println!("json[\"items\"][0][\"statistics\"][\"viewCount\"] is null for video {}", videoid);
+            return;
+        }
+
+        //ensure likes is i64 and not null
+
+        if json["items"][0]["statistics"]["likeCount"].is_null() {
+            println!("json[\"items\"][0][\"statistics\"][\"likeCount\"] is null for video {}", videoid);
+            return;
+        }
+
+        //ensure comments is i64 and not null
+
+        if json["items"][0]["statistics"]["commentCount"].is_null() {
+            println!("json[\"items\"][0][\"statistics\"][\"commentCount\"] is null for video {}", videoid);
+        return;
+        }
+
+        let views:i64 = json["items"][0]["statistics"]["viewCount"].as_str().unwrap().parse::<i64>().unwrap();
+        let likes:i64 = json["items"][0]["statistics"]["likeCount"].as_str().unwrap().parse::<i64>().unwrap();
+        let comments:i64 = json["items"][0]["statistics"]["commentCount"].as_str().unwrap().parse::<i64>().unwrap();
+
+        println!("views: {}", views);
+        println!("likes: {}", likes);
+        println!("comments: {}", comments);
+
+        let nodeid = [0,0,0,0,0,0];
+        let yt_uuid = uuid::Uuid::now_v1(&nodeid);
+
+        //insert into scylla
+        session.query(insertquery, (&videoid, &yt_uuid, &views, &likes, &comments)).await.unwrap();
+        session.query("UPDATE adorastats.statspoints SET amount = amount + 1 WHERE source = 'youtube';", &[]).await.unwrap();
+}
 }
