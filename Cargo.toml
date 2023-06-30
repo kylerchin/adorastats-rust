@@ -20,6 +20,7 @@ chrono = "*"
 smol = "*"
 rand = "0.8"
 serde_json = "1.0"
+termion = "2.0.1"
 
 [dependencies.uuid]
 version = "1.3.2"

@@ -11,6 +11,7 @@ use uuid::Uuid;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use serde_json::{Result, Value};
+use termion::{color, style};
 
 //add scylla dependencies
 use reqwest::Client as ReqwestClient;
@@ -62,10 +63,29 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
     .await
     .unwrap();
 
-    let mut interval = time::interval(Duration::from_secs(120));
+    let mut lastloop = Instant::now();
+
     loop {
-        interval.tick().await;
+
+        
+
         fetch(&session, &yt_api_keys, &client).await;
+
+        let duration = lastloop.elapsed();
+
+        println!(
+            "{}loop time is: {:?}{}",
+            color::Bg(color::Green),
+            duration,
+            style::Reset
+        );
+
+        //if the iteration of the loop took <5 min, sleep for the remainder of the 5 min
+        if (duration.as_millis() as i32) < 300_000 {
+            let sleep_duration = Duration::from_millis(300_000) - duration;
+            println!("sleeping for {:?}", sleep_duration);
+            std::thread::sleep(sleep_duration);
+        }
     }
 }
 
@@ -93,7 +113,6 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
             
                 getvideo(&session, url, videoid, client).await;
                // getvideo(session, url, videoid).await;
-           
         }
 
     }
