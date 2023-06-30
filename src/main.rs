@@ -13,13 +13,15 @@ use std::io::{BufRead, BufReader};
 use serde_json::{Result, Value};
 
 //add scylla dependencies
-
+use reqwest::Client as ReqwestClient;
 use scylla::{Session, SessionBuilder};
 
 use reqwest::Error;
 
 #[tokio::main]
 async fn main() {
+    let client = ReqwestClient::new();
+    
     let yt_file = File::open("./ytkeys.txt").unwrap();
     let yt_reader = BufReader::new(yt_file);
     let yt_api_keys: Vec<String> = yt_reader.lines().map(|line| line.unwrap()).collect();
@@ -63,11 +65,11 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
     let mut interval = time::interval(Duration::from_secs(120));
     loop {
         interval.tick().await;
-        fetch(&session, &yt_api_keys).await;
+        fetch(&session, &yt_api_keys, &client).await;
     }
 }
 
-async fn fetch(session: &Session, yt_api_keys: &Vec<String>) {
+async fn fetch(session: &Session, yt_api_keys: &Vec<String>, client: &ReqwestClient) {
     println!("fetching...");
     
     let scylla_file :  std::fs::File = File::open("./scyllakeys.txt").unwrap();
@@ -89,7 +91,7 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
             let chosen_api_key = yt_api_keys.choose(&mut rand::thread_rng()).unwrap();
             let url : String = format!("https://youtube.googleapis.com/youtube/v3/videos?part=statistics&id={}&key={}", videoid, chosen_api_key);								
             
-                getvideo(&session, url, videoid).await;
+                getvideo(&session, url, videoid, client).await;
                // getvideo(session, url, videoid).await;
            
         }
@@ -97,13 +99,13 @@ let scylla_keys: Vec<String> = scylla_reader.lines().map(|line| line.unwrap()).c
     }
 }
 
-async fn getvideo(session: &Session, url: String, videoid: String) {
+async fn getvideo(session: &Session, url: String, videoid: String, client: &ReqwestClient) {
 
     println!("url: {}", url);
 
    // let response = reqwest::get(url).await.unwrap();
 
-    match reqwest::get(url).await {
+    match client.get(url).send().await {
         Ok(response) => {
            // println!("response: {}", resp.status());
            
